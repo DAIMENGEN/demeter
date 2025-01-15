@@ -1,0 +1,8 @@
+@use "@D/core/style/theme.scss" as *;
+
+.ant-btn-primary {
+  box-shadow: none;
+}
+.ant-spin-dot-item {
+  background-color: $primary-color !important;
+}

@@ -1,0 +1,6 @@
+.navigation-menu-item-list {
+  display: grid;
+  grid-gap: 20px;
+  grid-template-rows: auto;
+  grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
+}
