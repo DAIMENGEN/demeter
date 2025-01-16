@@ -1,5 +1,5 @@
 import "./schedule.scss";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {Button, Collapse, Dropdown, Layout, Menu, Space} from "antd";
 import {useDemeterDispatch} from "@D/core/store/demeter-hook.ts";
 import {useDeleteSchedule} from "@D/components/schedule/common/hooks/use-delete-schedule.tsx";
@@ -21,13 +21,14 @@ import {
 } from "@D/core/store/features/schedule-slice.ts";
 import {MoreIcon01} from "@D/icons/more-icon/more-icon-01.tsx";
 import {SearchIcon01} from "@D/icons/search-icon/search-icon-01.tsx";
-import {useScheduleMenuItems} from "@D/components/schedule/common/hooks/use-schedule-menu-items.tsx";
 import {Outlet, useNavigate} from "react-router-dom";
 import {CreateSchedule} from "@D/components/schedule/common/modals/create-schedule/create-schedule.tsx";
 import {RenameSchedule} from "@D/components/schedule/common/modals/rename-schedule/rename-schedule.tsx";
+import {useProjects} from "@D/components/schedule/common/hooks/use-projects.tsx";
 
 export const Schedule = () => {
     const {Sider} = Layout;
+    const projects = useProjects();
     const navigate = useNavigate();
     const [collapsed, setCollapsed] = useState(false);
     const dispatch = useDemeterDispatch();
@@ -35,6 +36,14 @@ export const Schedule = () => {
     const [selectedKeys, setSelectedKeys] = useState<Array<string>>(["schedule-home"]);
     const [siderActiveKeys, setSiderActiveKeys] = useState<Array<string>>([]);
     const {deleteScheduleHolderMessage, deleteSchedule} = useDeleteSchedule();
+
+    const truncateString = useCallback((str: string, maxLength: number) => {
+        if (str.length > maxLength) {
+            return str.substring(0, maxLength) + '...';
+        } else {
+            return str;
+        }
+    }, []);
 
     useEffect(() => {
         const projectService = ProjectService.getInstance();
@@ -59,7 +68,17 @@ export const Schedule = () => {
                         <Menu className={"schedule-sider-menu"}
                               mode="inline"
                               selectedKeys={selectedKeys}
-                              onClick={(e) => setSelectedKeys([e.key])}
+                              onClick={(e) => {
+                                  setSelectedKeys([e.key]);
+                                  switch (e.key) {
+                                      case "schedule-home":
+                                          navigate("/home-page/schedule");
+                                          break;
+                                      case "my-work":
+                                          // navigate("/schedule-page/my-work");
+                                          break;
+                                  }
+                              }}
                               items={[
                                   {
                                       key: 'divider-1',
@@ -178,10 +197,47 @@ export const Schedule = () => {
                                           children: <Menu className={"schedule-sider-workspace-collapse-menu"}
                                                           mode="vertical"
                                                           selectedKeys={selectedKeys}
-                                                          items={useScheduleMenuItems(projectId => {
-                                                              setSelectedKeys([projectId]);
-                                                              navigate(`/home-page/schedule/maintenance/${projectId}`);
-                                                          })}
+                                                          items={projects.map(project => ({
+                                                              key: project.id,
+                                                              label: <div className={`schedule-menu-item-title`}
+                                                                          title={project.projectName}
+                                                                          onClick={() => {
+                                                                              setSelectedKeys([project.id]);
+                                                                              navigate(`/home-page/schedule/maintenance/${project.id}`);
+                                                                          }}>{truncateString(project.projectName, 14)}</div>,
+                                                              children: [
+                                                                  {
+                                                                      key: `${project.id}-open-in-new-table`,
+                                                                      label: 'Open in New Tab'
+                                                                  },
+                                                                  {key: `${project.id}-divider-1`, type: 'divider'},
+                                                                  {
+                                                                      key: `${project.id}-rename-schedule`,
+                                                                      label: 'Rename Schedule'
+                                                                  },
+                                                                  {
+                                                                      key: `${project.id}-add-to-favorites`,
+                                                                      label: 'Add to Favorites'
+                                                                  },
+                                                                  {
+                                                                      key: `${project.id}-save-as-a-template`,
+                                                                      label: 'Save as a Template'
+                                                                  },
+                                                                  {key: `${project.id}-divider-2`, type: 'divider'},
+                                                                  {
+                                                                      key: `${project.id}-delete-schedule`,
+                                                                      label: 'Delete Schedule'
+                                                                  },
+                                                                  {
+                                                                      key: `${project.id}-export-schedule`,
+                                                                      label: 'Export Schedule'
+                                                                  },
+                                                                  {
+                                                                      key: `${project.id}-share-schedule`,
+                                                                      label: 'Share Schedule'
+                                                                  }
+                                                              ]
+                                                          }))}
                                                           onClick={(e) => {
                                                               const {key, keyPath, domEvent} = e;
                                                               domEvent.stopPropagation();
